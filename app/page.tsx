@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
 
+// Airport options used in the home page search form.
 const airports = [
   { code: 'NZNE', label: 'Dairy Flat, Auckland' },
   { code: 'YSSY', label: 'Sydney, Australia' },
@@ -12,6 +13,7 @@ const airports = [
   { code: 'NZTL', label: 'Lake Tekapo' },
 ];
 
+// Main route information shown on the landing page.
 const routes = [
   { from: 'Dairy Flat', to: 'Sydney', code: 'NZNE → YSSY', dest: 'YSSY', frequency: 'Weekly prestige service', days: 'Friday outbound, Sunday return', aircraft: 'SyberJet SJ30i', seats: '6 seats', price: 'NZD $1,250', tag: 'Prestige' },
   { from: 'Dairy Flat', to: 'Rotorua', code: 'NZNE → NZRO', dest: 'NZRO', frequency: 'Weekday shuttle', days: 'Two services per weekday', aircraft: 'Cirrus SF50', seats: '4 seats', price: 'NZD $185', tag: 'Shuttle' },
@@ -20,6 +22,7 @@ const routes = [
   { from: 'Dairy Flat', to: 'Lake Tekapo', code: 'NZNE → NZTL', dest: 'NZTL', frequency: 'Scenic South Island service', days: 'Monday outbound, Tuesday return', aircraft: 'HondaJet Elite', seats: '5 seats', price: 'NZD $420', tag: 'Scenic' },
 ];
 
+// Get today's date based on New Zealand time.
 function todayStr() {
   const now = new Date();
   const nzDate = new Intl.DateTimeFormat('en-CA', {
@@ -32,6 +35,7 @@ function todayStr() {
   return nzDate;
 }
 
+// Set a default return date one week after today.
 function weekStr() {
   const d = new Date();
   d.setDate(d.getDate() + 7);
@@ -45,6 +49,7 @@ export default function HomePage() {
   const [date1, setDate1] = useState(todayStr());
   const [date2, setDate2] = useState(weekStr());
 
+  // Build the search URL and send the user to the search page.
   function goToSearch() {
     if (!orig || !dest) {
       alert('Please select a destination.');
@@ -67,6 +72,7 @@ export default function HomePage() {
     window.location.assign(`/search?${qs.toString()}`);
   }
 
+  // Handle the home page search form submission.
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
     goToSearch();
@@ -74,6 +80,7 @@ export default function HomePage() {
 
   return (
     <main className="bg-slate-50">
+      {/* Hero section with the main booking search card. */}
       <section className="hero-section">
         <div className="hero-glow hero-glow-one" />
         <div className="hero-glow hero-glow-two" />
@@ -93,6 +100,7 @@ export default function HomePage() {
               <p className="mt-1 text-sm text-slate-500">Select your route and travel date.</p>
             </div>
 
+            {/* Search form used to choose route, trip type, and dates. */}
             <form onSubmit={handleSearch} className="space-y-3">
               <div className="trip-toggle mobile-touch-safe" role="radiogroup" aria-label="Trip type">
                 <label className={tripType === 'oneway' ? 'trip-toggle-active' : 'trip-toggle-button'}>
@@ -166,6 +174,7 @@ export default function HomePage() {
           <Link href="/my-bookings" className="outline-link">Manage a booking</Link>
         </div>
 
+        {/* Route cards showing the main destinations and service details. */}
         <div className="route-grid">
           {routes.map((route, index) => (
             <article key={route.code} className="route-card fade-up" style={{ animationDelay: `${index * 70}ms` }}>
@@ -185,6 +194,7 @@ export default function HomePage() {
           ))}
         </div>
 
+        {/* Small feature cards explaining the booking service. */}
         <div className="feature-grid fade-up">
           {[
             ['Instant booking', 'Book confirmed seats quickly'],

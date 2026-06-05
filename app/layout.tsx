@@ -44,12 +44,11 @@ export default function RootLayout({
         </nav>
 
         <main className="min-h-screen">{children}</main>
-
+        {/* Footer information shown across the website */}
         <footer className="site-footer">
           <p className="font-semibold text-white">Dairy Flat Air Ltd</p>
           <p className="mt-1 text-sky-200/80">
-            Operating from NZNE Dairy Flat Airport, Auckland · Assignment 2 booking system
-          </p>
+            © 2026 NZNE Dairy Flat Airport, Auckland · Assignment 2 booking system | Created by SAW LWIN HTOO          </p>
         </footer>
       </body>
     </html>
