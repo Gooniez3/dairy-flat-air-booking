@@ -2,6 +2,34 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import Schedule from '@/models/Schedule';
 
+const TZ_OFFSET: Record<string, number> = {
+  NZNE: 12,
+  YSSY: 10,
+  NZRO: 12,
+  NZCI: 12.75,
+  NZGB: 12,
+  NZTL: 12,
+};
+
+// Convert a selected local calendar date into the correct UTC search range.
+function localDayRangeUTC(dateStr: string, airport: string) {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const offset = TZ_OFFSET[airport] ?? 12;
+
+  const start = new Date(
+    Date.UTC(year, month - 1, day, 0, 0, 0, 0) -
+      offset * 60 * 60 * 1000
+  );
+
+  const end = new Date(
+    Date.UTC(year, month - 1, day + 1, 0, 0, 0, 0) -
+      offset * 60 * 60 * 1000 -
+      1
+  );
+
+  return { start, end };
+}
+
 export async function GET(request: NextRequest) {
   try {
     await connectDB();
@@ -11,7 +39,7 @@ export async function GET(request: NextRequest) {
     const date2 = searchParams.get('date2');
     const orig = searchParams.get('orig');
     const dest = searchParams.get('dest');
-    const exactDate = searchParams.get('exact'); // if 'true', search exact date only
+    const exactDate = searchParams.get('exact'); // if 'true', search exact local date only
 
     if (!date1 || !orig || !dest) {
       return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 });
@@ -21,9 +49,8 @@ export async function GET(request: NextRequest) {
     const destination = dest.toUpperCase();
 
     if (exactDate === 'true') {
-      // Search for flights on the EXACT date only
-      const startOfDay = new Date(date1 + 'T00:00:00.000Z');
-      const endOfDay = new Date(date1 + 'T23:59:59.999Z');
+      // Search for flights on the selected local calendar date.
+      const { start: startOfDay, end: endOfDay } = localDayRangeUTC(date1, origin);
 
       const exactFlights = await Schedule.find({
         origin,
@@ -33,7 +60,6 @@ export async function GET(request: NextRequest) {
       }).sort({ departureTime: 1 });
 
       if (exactFlights.length > 0) {
-        // Found flights on exact date
         return NextResponse.json({
           exactMatch: true,
           flights: exactFlights.map(toResult),
@@ -42,7 +68,7 @@ export async function GET(request: NextRequest) {
         });
       }
 
-      // No flights on exact date - find nearest before and after
+      // If there is no flight on the selected date, show nearby options.
       const nearestBefore = await Schedule.find({
         origin,
         destination,
@@ -65,9 +91,9 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Normal range search (used for return flights window)
-    const startDate = new Date(date1 + 'T00:00:00.000Z');
-    const endDate = new Date((date2 || date1) + 'T23:59:59.999Z');
+    // Normal range search, also based on the origin airport local calendar date.
+    const { start: startDate } = localDayRangeUTC(date1, origin);
+    const { end: endDate } = localDayRangeUTC(date2 || date1, origin);
 
     const schedules = await Schedule.find({
       origin,
