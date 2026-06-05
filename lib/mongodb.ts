@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 
+// MongoDB Atlas connection string loaded from environment variables.
 const MONGODB_URI = process.env.MONGODB_URI || '';
 
 interface MongooseCache {
@@ -8,6 +9,7 @@ interface MongooseCache {
 }
 
 declare global {
+  // Store the connection cache globally during development.
   // eslint-disable-next-line no-var
   var mongooseCache: MongooseCache | undefined;
 }
@@ -19,6 +21,8 @@ if (!global.mongooseCache) {
   global.mongooseCache = cached;
 }
 
+// Reuse an existing connection when possible to avoid
+// creating multiple MongoDB connections during development.
 async function connectDB() {
   if (!MONGODB_URI) {
     throw new Error('Please define MONGODB_URI environment variable');
@@ -29,6 +33,7 @@ async function connectDB() {
   }
 
   try {
+    // Create a new connection to MongoDB Atlas.
     cached.promise = mongoose.connect(MONGODB_URI, {
       serverSelectionTimeoutMS: 10000,
     });

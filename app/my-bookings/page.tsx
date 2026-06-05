@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 
+// Airport display names used in the booking cards.
 const AIRPORTS: Record<string, { city: string; short: string }> = {
   NZNE: { city: 'Dairy Flat, Auckland', short: 'Dairy Flat' },
   YSSY: { city: 'Sydney, Australia', short: 'Sydney' },
@@ -12,6 +13,7 @@ const AIRPORTS: Record<string, { city: string; short: string }> = {
   NZTL: { city: 'Lake Tekapo, NZ', short: 'Lake Tekapo' },
 };
 
+// Aircraft codes mapped to readable aircraft names.
 const AIRCRAFT: Record<string, string> = {
   SJ30i: 'SyberJet SJ30i',
   SF50_A: 'Cirrus SF50',
@@ -20,6 +22,7 @@ const AIRCRAFT: Record<string, string> = {
   HJ_B: 'HondaJet Elite',
 };
 
+// Timezone map used to display flight times correctly.
 const TZ_MAP: Record<string, string> = {
   NZNE: 'Pacific/Auckland',
   YSSY: 'Australia/Sydney',
@@ -44,6 +47,7 @@ interface Booking {
   isPast: boolean;
 }
 
+// Format full date and time for each flight using the airport timezone.
 function formatDateTime(dateStr: string, airport: string) {
   return new Date(dateStr).toLocaleString('en-NZ', {
     weekday: 'short', day: 'numeric', month: 'short', year: 'numeric',
@@ -52,6 +56,7 @@ function formatDateTime(dateStr: string, airport: string) {
   });
 }
 
+// Format the route time shown inside the booking card.
 function formatTime(dateStr: string, airport: string) {
   return new Date(dateStr).toLocaleTimeString('en-NZ', {
     hour: '2-digit', minute: '2-digit', hour12: false,
@@ -59,6 +64,7 @@ function formatTime(dateStr: string, airport: string) {
   });
 }
 
+// Card component used to show one booking result.
 function BookingCard({ booking, onCancel, past = false }: {
   booking: Booking;
   onCancel?: (ref: string) => void;
@@ -119,6 +125,7 @@ export default function MyBookingsPage() {
   const [cancelMsg, setCancelMsg] = useState('');
   const [cancelSuccess, setCancelSuccess] = useState(false);
 
+  // Search for bookings using the reference number and passenger last name.
   async function handleSearch(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true); setError(''); setSearched(true); setCancelMsg('');
@@ -134,6 +141,7 @@ export default function MyBookingsPage() {
     }
   }
 
+  // Cancel an upcoming booking by sending a delete request to the API.
   async function handleCancel(ref: string) {
     setCancelling(true); setCancelMsg('');
     try {
@@ -151,6 +159,7 @@ export default function MyBookingsPage() {
     }
   }
 
+  // Separate upcoming and past flights for clearer display.
   const upcoming = bookings.filter(b => !b.isPast);
   const past = bookings.filter(b => b.isPast);
 
@@ -163,6 +172,7 @@ export default function MyBookingsPage() {
           <p>View your itinerary, check flight details, and cancel upcoming bookings using your booking reference and last name.</p>
         </div>
 
+        {/* Booking lookup form */}
         <form onSubmit={handleSearch} className="booking-lookup-card">
           <label>Booking Reference<input type="text" value={reference} onChange={e => setReference(e.target.value.toUpperCase())} placeholder="e.g. DFAB1234" required className="pnr-input" /></label>
           <label>Last Name<input type="text" value={lastName} onChange={e => setLastName(e.target.value)} placeholder="e.g. Smith" required /></label>
@@ -170,6 +180,7 @@ export default function MyBookingsPage() {
         </form>
       </section>
 
+      {/* Short explanation cards for the booking management page */}
       <section className="booking-info-grid fade-up delay-1">
         <div><span>Easy Lookup</span><strong>Reference + last name</strong></div>
         <div><span>Manage</span><strong>Cancel upcoming flights</strong></div>
@@ -183,9 +194,11 @@ export default function MyBookingsPage() {
         <div className="empty-state"><strong>No bookings found</strong><span>Check your booking reference and last name, then try again.</span></div>
       )}
 
+      {/* Upcoming and past booking lists */}
       {upcoming.length > 0 && <section className="bookings-list"><h2>Upcoming Flights</h2>{upcoming.map(b => <BookingCard key={b.bookingReference} booking={b} onCancel={setCancelRef} />)}</section>}
       {past.length > 0 && <section className="bookings-list"><h2 className="muted">Past Flights</h2>{past.map(b => <BookingCard key={b.bookingReference} booking={b} past />)}</section>}
 
+      {/* Confirmation modal before cancelling a booking */}
       {cancelRef && (
         <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && setCancelRef(null)}>
           <div className="cancel-modal">

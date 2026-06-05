@@ -1,5 +1,12 @@
 @import "tailwindcss";
 
+/* =========================================================
+   Dairy Flat Air - Global Styles
+   Assignment 2 Web Booking System
+   Main styling for homepage, search, booking, invoice
+   and responsive mobile layouts.
+   ========================================================= */
+
 :root {
   --primary: #0f4c81;
   --primary-dark: #0a3460;
@@ -22,6 +29,9 @@ body {
 button, input, select { font: inherit; }
 a { color: inherit; }
 
+/* ---------------------------
+   Navigation Bar
+   --------------------------- */
 .site-nav {
   position: sticky;
   top: 0;
@@ -79,6 +89,9 @@ a { color: inherit; }
 .site-nav-link:hover { background: rgba(255,255,255,0.12); color: white; transform: translateY(-1px); }
 .site-footer { background: #082744; padding: 2rem 1.5rem; text-align: center; font-size: 0.875rem; color: #dbeafe; }
 
+/* ---------------------------
+   Homepage Hero Section
+   --------------------------- */
 .hero-section {
   position: relative;
   overflow: hidden;
@@ -185,6 +198,10 @@ a { color: inherit; }
 .section-eyebrow { margin: 0; color: var(--primary); font-size: 0.76rem; font-weight: 950; letter-spacing: 0.18em; text-transform: uppercase; }
 .section-title, .page-header h1 { margin: 0.3rem 0 0; color: var(--text); font-size: clamp(1.6rem, 4vw, 2.25rem); font-weight: 950; letter-spacing: -0.04em; }
 .outline-link { border: 1.5px solid var(--border); background: white; color: #334155; padding: 0.7rem 1rem; font-size: 0.9rem; }
+
+/* ---------------------------
+   Scheduled Routes Cards
+   --------------------------- */
 .route-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
 .route-card { border: 1px solid var(--border); border-radius: 1.25rem; background: white; padding: 1rem; box-shadow: 0 8px 24px rgba(15,23,42,0.05); transition: transform .2s, box-shadow .2s; }
 .route-card:hover { transform: translateY(-4px); box-shadow: 0 18px 36px rgba(15,76,129,0.12); }
@@ -200,6 +217,10 @@ a { color: inherit; }
 .feature-card span { display: block; margin-top: 0.2rem; color: var(--muted); font-size: 0.75rem; }
 
 .page-header { margin-bottom: 1.2rem; }
+
+/* ---------------------------
+   Flight Search Page
+   --------------------------- */
 .search-panel { border: 1px solid var(--border); background: white; border-radius: 1.25rem; padding: 1.25rem; box-shadow: 0 8px 28px rgba(15,23,42,0.07); margin-bottom: 1.5rem; }
 .search-route-grid { display: grid; grid-template-columns: minmax(0,1fr) 52px minmax(0,1fr); gap: 0.65rem; margin-bottom: 0.75rem; align-items: stretch; }
 .swap-button { border: 1.5px solid var(--border); background: #f8fafc; color: var(--primary); border-radius: 1rem; font-size: 1.1rem; font-weight: 950; cursor: pointer; }
@@ -251,6 +272,9 @@ a { color: inherit; }
 .sticky-book-bar strong, .sticky-book-bar span { display:block; }
 .sticky-book-bar span { color:#64748b; font-size:.88rem; margin-top:.15rem; }
 
+/* ---------------------------
+   Booking Confirmation Modal
+   --------------------------- */
 .modal-backdrop { position:fixed; inset:0; z-index:1000; background:rgba(2,6,23,.62); display:flex; align-items:center; justify-content:center; padding:1rem; }
 .booking-modal { width:min(100%,460px); max-height:88vh; overflow:auto; background:white; border-radius:1.25rem; padding:1.2rem; box-shadow:0 24px 64px rgba(0,0,0,.35); }
 .modal-header { display:flex; justify-content:space-between; align-items:center; gap:1rem; margin-bottom:.8rem; }
@@ -271,6 +295,9 @@ a { color: inherit; }
 .modal-form input, .modal-form select { border:1.5px solid var(--border); border-radius:.8rem; padding:.6rem .75rem; margin-top:.35rem; }
 .modal-name-grid { display:grid; grid-template-columns:1fr 1fr; gap:.65rem; }
 
+/* ---------------------------
+   My Bookings Page
+   --------------------------- */
 .booking-hero { position:relative; overflow:hidden; border-radius:1.5rem; background:linear-gradient(135deg,#0a1f3c,#0f4c81 58%,#1565c0); color:white; padding:2rem; box-shadow:0 18px 48px rgba(15,76,129,.28); display:grid; grid-template-columns:minmax(0,1fr) 390px; gap:2rem; align-items:center; margin-bottom:1.2rem; }
 .booking-hero:before, .booking-hero:after { content:""; position:absolute; border-radius:9999px; background:rgba(255,255,255,.06); }
 .booking-hero:before { right:-55px; top:-65px; width:190px; height:190px; }
@@ -327,10 +354,16 @@ a { color: inherit; }
 .cancel-actions button:first-child { border:1.5px solid var(--border); background:white; color:#64748b; }
 .cancel-actions button:last-child { border:0; background:#be123c; color:white; }
 
+/* ---------------------------
+   Simple Page Animations
+   --------------------------- */
 .fade-up { animation: fadeUp .55s ease both; }
 .delay-1 { animation-delay: .08s; }
 @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
 
+/* ---------------------------
+   Tablet Responsive Layout
+   --------------------------- */
 @media (max-width: 900px) {
   .hero-container, .booking-hero { grid-template-columns: 1fr; gap: 1.25rem; }
   .route-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
@@ -338,6 +371,9 @@ a { color: inherit; }
   .booking-info-grid { grid-template-columns: 1fr; }
 }
 
+/* ---------------------------
+   Mobile Responsive Layout
+   --------------------------- */
 @media (max-width: 640px) {
   .site-nav-inner { min-height: auto; padding: .65rem .75rem .75rem; flex-direction: column; align-items: stretch; gap: .6rem; }
   .site-brand { justify-content: center; }
@@ -382,6 +418,9 @@ a { color: inherit; }
   .cancel-actions { flex-direction: column; }
 }
 
+/* ---------------------------
+   Very Small Screen Devices
+   --------------------------- */
 @media (max-width: 380px) {
   .site-nav-link { font-size: .72rem; }
   .hero-title { font-size: 1.8rem; }
@@ -443,8 +482,9 @@ a { color: inherit; }
 
 
 /* =========================================================
-   MOBILE AIRLINE APP COMPACT POLISH
-   Makes mobile feel closer to a real airline booking app
+   Mobile UI Refinements
+   Adjustments made after testing on phones to improve
+   readability, touch targets and booking flow usability.
    ========================================================= */
 
 @media (max-width: 640px) {

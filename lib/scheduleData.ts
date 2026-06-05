@@ -1,3 +1,4 @@
+// Airport information used for routes, timezones, and display labels.
 export const AIRPORTS: Record<string, { name: string; city: string; timezone: string; tzOffset: number }> = {
   NZNE: { name: 'Dairy Flat Airport', city: 'Dairy Flat, Auckland', timezone: 'NZT (GMT+12)', tzOffset: 12 },
   YSSY: { name: 'Sydney Airport', city: 'Sydney, Australia', timezone: 'AEST (GMT+10)', tzOffset: 10 },
@@ -7,6 +8,7 @@ export const AIRPORTS: Record<string, { name: string; city: string; timezone: st
   NZTL: { name: 'Lake Tekapo Airport', city: 'Lake Tekapo, NZ', timezone: 'NZT (GMT+12)', tzOffset: 12 },
 };
 
+// Aircraft details used to set seat capacity for each scheduled flight.
 export const AIRCRAFT: Record<string, { name: string; capacity: number }> = {
   SJ30i: { name: 'SyberJet SJ30i', capacity: 6 },
   SF50_A: { name: 'Cirrus SF50 (Alpha)', capacity: 4 },
@@ -27,40 +29,46 @@ export interface RouteTemplate {
   daysOfWeek: number[]; // 0=Sun,1=Mon,...,6=Sat
 }
 
+// Weekly route timetable used to generate real scheduled flight dates.
 export const ROUTE_TEMPLATES: RouteTemplate[] = [
-  // Sydney - departs NZ time (GMT+12), stored as UTC
+  // Sydney prestige service
   { flightNumber: 'DF101', origin: 'NZNE', destination: 'YSSY', aircraft: 'SJ30i', departureHour: 10, departureMinute: 30, durationMinutes: 195, price: 1250, daysOfWeek: [5] },
   { flightNumber: 'DF102', origin: 'YSSY', destination: 'NZNE', aircraft: 'SJ30i', departureHour: 14, departureMinute: 30, durationMinutes: 165, price: 1250, daysOfWeek: [0] },
-  // Rotorua shuttle
+
+  // Rotorua weekday shuttle
   { flightNumber: 'DF201', origin: 'NZNE', destination: 'NZRO', aircraft: 'SF50_A', departureHour: 7, departureMinute: 0, durationMinutes: 45, price: 185, daysOfWeek: [1,2,3,4,5] },
   { flightNumber: 'DF202', origin: 'NZRO', destination: 'NZNE', aircraft: 'SF50_A', departureHour: 8, departureMinute: 15, durationMinutes: 45, price: 185, daysOfWeek: [1,2,3,4,5] },
   { flightNumber: 'DF203', origin: 'NZNE', destination: 'NZRO', aircraft: 'SF50_A', departureHour: 16, departureMinute: 30, durationMinutes: 45, price: 185, daysOfWeek: [1,2,3,4,5] },
   { flightNumber: 'DF204', origin: 'NZRO', destination: 'NZNE', aircraft: 'SF50_A', departureHour: 18, departureMinute: 0, durationMinutes: 45, price: 185, daysOfWeek: [1,2,3,4,5] },
-  // Great Barrier Island
+
+  // Great Barrier Island service
   { flightNumber: 'DF301', origin: 'NZNE', destination: 'NZGB', aircraft: 'SF50_B', departureHour: 9, departureMinute: 0, durationMinutes: 35, price: 220, daysOfWeek: [1,3,5] },
   { flightNumber: 'DF302', origin: 'NZGB', destination: 'NZNE', aircraft: 'SF50_B', departureHour: 10, departureMinute: 0, durationMinutes: 35, price: 220, daysOfWeek: [2,4,6] },
-  // Chatham Islands
+
+  // Chatham Islands service
   { flightNumber: 'DF401', origin: 'NZNE', destination: 'NZCI', aircraft: 'HJ_A', departureHour: 8, departureMinute: 0, durationMinutes: 135, price: 680, daysOfWeek: [2,5] },
   { flightNumber: 'DF402', origin: 'NZCI', destination: 'NZNE', aircraft: 'HJ_A', departureHour: 9, departureMinute: 0, durationMinutes: 120, price: 680, daysOfWeek: [3,6] },
-  // Lake Tekapo
+
+  // Lake Tekapo service
   { flightNumber: 'DF501', origin: 'NZNE', destination: 'NZTL', aircraft: 'HJ_B', departureHour: 9, departureMinute: 30, durationMinutes: 105, price: 420, daysOfWeek: [1] },
   { flightNumber: 'DF502', origin: 'NZTL', destination: 'NZNE', aircraft: 'HJ_B', departureHour: 11, departureMinute: 0, durationMinutes: 100, price: 420, daysOfWeek: [2] },
 ];
 
-// Convert local time at origin to UTC Date object
+// Convert local airport departure time into a UTC Date object.
 function localToUTC(year: number, month: number, day: number, hour: number, minute: number, tzOffset: number): Date {
-  // tzOffset = hours ahead of UTC (e.g. 12 for NZT)
+  // tzOffset is the number of hours ahead of UTC.
   const utcMs = Date.UTC(year, month, day, hour, minute, 0, 0) - tzOffset * 60 * 60 * 1000;
   return new Date(utcMs);
 }
 
+// Generate scheduled flights from the weekly timetable for multiple weeks.
 export function generateScheduledFlights(weeksAhead: number = 8) {
   const flights = [];
   const today = new Date();
 
-  // Start from previous Monday in NZ local time
-  const nzToday = new Date(today.getTime() + 12 * 60 * 60 * 1000); // approx NZ date
-  const dayOfWeek = nzToday.getUTCDay(); // 0=Sun
+  // Start from the previous Monday using an approximate New Zealand date.
+  const nzToday = new Date(today.getTime() + 12 * 60 * 60 * 1000);
+  const dayOfWeek = nzToday.getUTCDay();
   const daysToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
 
   for (let w = -1; w < weeksAhead; w++) {
@@ -68,7 +76,7 @@ export function generateScheduledFlights(weeksAhead: number = 8) {
       const originTz = AIRPORTS[template.origin].tzOffset;
 
       for (const dow of template.daysOfWeek) {
-        // Calculate the date offset from this Monday
+        // Work out the real calendar date for this weekly flight.
         const daysFromMonday = dow === 0 ? 6 : dow - 1;
         const totalDaysOffset = daysToMonday + w * 7 + daysFromMonday;
 

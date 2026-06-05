@@ -10,6 +10,7 @@ if (!MONGODB_URI) {
   process.exit(1);
 }
 
+// Airport information used when generating scheduled flights.
 const AIRPORTS = {
   NZNE: { name: 'Dairy Flat Airport', city: 'Dairy Flat, Auckland', tzOffset: 12 },
   YSSY: { name: 'Sydney Airport', city: 'Sydney, Australia', tzOffset: 10 },
@@ -19,6 +20,7 @@ const AIRPORTS = {
   NZTL: { name: 'Lake Tekapo Airport', city: 'Lake Tekapo, NZ', tzOffset: 12 },
 };
 
+// Aircraft capacity information used during flight generation.
 const AIRCRAFT = {
   SJ30i: { name: 'SyberJet SJ30i', capacity: 6 },
   SF50_A: { name: 'Cirrus SF50 (Alpha)', capacity: 4 },
@@ -27,6 +29,7 @@ const AIRCRAFT = {
   HJ_B: { name: 'HondaJet Elite (Bravo)', capacity: 5 },
 };
 
+// Weekly timetable used to create real flight schedules.
 const ROUTE_TEMPLATES = [
   { flightNumber: 'DF101', origin: 'NZNE', destination: 'YSSY', aircraft: 'SJ30i', departureTime: '10:30', durationMinutes: 195, price: 1250, daysOfWeek: [5] },
   { flightNumber: 'DF102', origin: 'YSSY', destination: 'NZNE', aircraft: 'SJ30i', departureTime: '14:30', durationMinutes: 165, price: 1250, daysOfWeek: [0] },
@@ -42,15 +45,16 @@ const ROUTE_TEMPLATES = [
   { flightNumber: 'DF502', origin: 'NZTL', destination: 'NZNE', aircraft: 'HJ_B', departureTime: '11:00', durationMinutes: 100, price: 420, daysOfWeek: [2] },
 ];
 
+// Generate scheduled flights for multiple weeks ahead.
 function generateFlights(weeksAhead = 10) {
   const flights = [];
   const today = new Date();
   const startDate = new Date(today);
   const dayOfWeek = today.getDay();
-  // Go back to last Monday
+  // Start scheduling from the previous Monday.
   startDate.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
   startDate.setHours(0, 0, 0, 0);
-
+  // Create schedule entries for each route and operating day.
   for (let w = -1; w < weeksAhead; w++) {
     for (const template of ROUTE_TEMPLATES) {
       for (const dow of template.daysOfWeek) {
@@ -82,6 +86,7 @@ function generateFlights(weeksAhead = 10) {
   return flights;
 }
 
+// Populate MongoDB with flight schedules and indexes.
 async function seed() {
   const client = new MongoClient(MONGODB_URI);
   try {
@@ -90,17 +95,17 @@ async function seed() {
 
     const db = client.db('dairy-flat-air');
 
-    // Clear collections
+    // Remove existing records before reseeding.
     await db.collection('schedules').deleteMany({});
     await db.collection('passengers').deleteMany({});
     console.log('Cleared existing data');
 
-    // Create indexes
+    // Create indexes to improve search performance.
     await db.collection('schedules').createIndex({ origin: 1, destination: 1, departureTime: 1 });
     await db.collection('schedules').createIndex({ 'bookings.bookingReference': 1 });
     await db.collection('schedules').createIndex({ 'bookings.passengerEmail': 1 });
 
-    // Insert flights
+    // Generate and insert scheduled flights.
     const flights = generateFlights(10);
     await db.collection('schedules').insertMany(flights);
     console.log(`Inserted ${flights.length} scheduled flights`);

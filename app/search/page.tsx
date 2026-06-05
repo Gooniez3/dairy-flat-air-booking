@@ -3,6 +3,7 @@
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useState, useEffect, Suspense } from 'react';
 
+// Airport information used throughout the search page.
 const AIRPORTS: Record<string, { name: string; city: string; timezone: string }> = {
   NZNE: { name: 'Dairy Flat Airport', city: 'Dairy Flat, Auckland', timezone: 'NZT (GMT+12)' },
   YSSY: { name: 'Sydney Airport', city: 'Sydney, Australia', timezone: 'AEST (GMT+10)' },
@@ -12,6 +13,7 @@ const AIRPORTS: Record<string, { name: string; city: string; timezone: string }>
   NZTL: { name: 'Lake Tekapo Airport', city: 'Lake Tekapo, NZ', timezone: 'NZT (GMT+12)' },
 };
 
+// Aircraft codes mapped to display names.
 const AIRCRAFT: Record<string, string> = {
   SJ30i: 'SyberJet SJ30i',
   SF50_A: 'Cirrus SF50',
@@ -20,6 +22,7 @@ const AIRCRAFT: Record<string, string> = {
   HJ_B: 'HondaJet Elite',
 };
 
+// Timezone mapping for displaying local departure and arrival times.
 const TZ_MAP: Record<string, string> = {
   NZNE: 'Pacific/Auckland',
   YSSY: 'Australia/Sydney',
@@ -50,6 +53,7 @@ interface SearchResult {
   nearestAfter: Flight[];
 }
 
+// Format flight times using the correct airport timezone.
 function formatTime(dateStr: string, airport: string) {
   return new Date(dateStr).toLocaleTimeString('en-NZ', {
     hour: '2-digit', minute: '2-digit', hour12: false,
@@ -57,6 +61,7 @@ function formatTime(dateStr: string, airport: string) {
   });
 }
 
+// Format flight dates shown in search results.
 function formatDate(dateStr: string, airport?: string) {
   return new Date(dateStr).toLocaleDateString('en-NZ', {
     weekday: 'short', day: 'numeric', month: 'short', year: 'numeric',
@@ -64,10 +69,12 @@ function formatDate(dateStr: string, airport?: string) {
   });
 }
 
+// Convert flight duration from minutes into hours and minutes.
 function formatDuration(mins: number) {
   return `${Math.floor(mins / 60)}h ${mins % 60}m`;
 }
 
+// Get today's date based on New Zealand time.
 function todayNZStr() {
   return new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Pacific/Auckland',
@@ -81,12 +88,14 @@ function isToday(date: string) {
   return date === todayNZStr();
 }
 
+// Display seat availability for each flight.
 function SeatBadge({ available, capacity }: { available: number; capacity: number }) {
   if (available === 0) return <span className="seat-badge seat-full">FULL</span>;
   if (available <= Math.ceil(capacity / 2)) return <span className="seat-badge seat-low">{available} SEAT{available !== 1 ? 'S' : ''} LEFT</span>;
   return <span className="seat-badge seat-ok">{available} SEATS AVAILABLE</span>;
 }
 
+// Flight result card used for displaying available flights.
 function FlightCard({ flight, onSelect, selected, dim }: {
   flight: Flight; onSelect: () => void; selected: boolean; dim?: boolean;
 }) {
@@ -136,6 +145,7 @@ function FlightCard({ flight, onSelect, selected, dim }: {
   );
 }
 
+// Show nearby available flights when no flight exists on the selected date.
 function NoFlightOnDate({ date, origin, destination, nearest, onSelect, selectedFlight, showEarlier = true }: {
   date: string; origin: string; destination: string;
   nearest: { before: Flight[]; after: Flight[] }; onSelect: (f: Flight) => void;
@@ -173,6 +183,7 @@ function NoFlightOnDate({ date, origin, destination, nearest, onSelect, selected
   );
 }
 
+// Booking form used to collect passenger details before confirming a booking.
 function BookingModal({ outbound, returnFlight, onClose, onConfirm }: {
   outbound: Flight; returnFlight: Flight | null; onClose: () => void;
   onConfirm: (form: { title: string; firstName: string; lastName: string; email: string }) => void;
@@ -182,7 +193,7 @@ function BookingModal({ outbound, returnFlight, onClose, onConfirm }: {
   const [error, setError] = useState('');
   const totalPrice = outbound.price + (returnFlight?.price || 0);
   const gst = Math.round(totalPrice * 0.15);
-
+  // Validate passenger details and continue with booking.
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.firstName || !form.lastName || !form.email) { setError('Please fill in all fields.'); return; }
@@ -228,6 +239,7 @@ function BookingModal({ outbound, returnFlight, onClose, onConfirm }: {
   );
 }
 
+// Main flight search page component.
 function SearchContent() {
   const params = useSearchParams();
   const router = useRouter();
@@ -254,13 +266,15 @@ function SearchContent() {
   const [selectedReturn, setSelectedReturn] = useState<Flight | null>(null);
   const [showModal, setShowModal] = useState(false);
 
+  // Automatically run a search when search parameters are provided in the URL.
   useEffect(() => {
     if (params.get('orig') && params.get('dest')) {
       doSearch(params.get('orig')!, params.get('dest')!, params.get('date1') || date1, params.get('date2') || date2, params.get('tripType') === 'return' ? 'return' : tripType);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
+  
+  // Search scheduled flights based on route, date and trip type.
   async function doSearch(o: string, d: string, d1: string, d2: string, type: 'oneway' | 'return' = tripType) {
     if (!o || !d || !d1) return;
     setLoading(true); setError(''); setSearched(true);
@@ -284,12 +298,12 @@ function SearchContent() {
     } catch (e) { setError(String(e)); }
     finally { setLoading(false); }
   }
-
+  // Handle search form submission.
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
     doSearch(orig, dest, date1, date2, tripType);
   }
-
+  // Create booking records and redirect to the invoice page.
   async function handleConfirmBooking(form: { title: string; firstName: string; lastName: string; email: string }) {
     if (!selectedOutbound) return;
     const passengerName = `${form.title} ${form.firstName} ${form.lastName}`;
@@ -317,9 +331,9 @@ function SearchContent() {
     }
     router.push(`/invoice?${qs.toString()}`);
   }
-
+  // Ensure all required flight selections are completed before booking.
   const canBook = selectedOutbound && (tripType === 'oneway' || selectedReturn);
-
+  // Render the flight search interface and search results.
   return (
     <div className="page-shell">
       <div className="page-header fade-up">
@@ -401,7 +415,7 @@ function SearchContent() {
     </div>
   );
 }
-
+// Render the search page with a loading fallback.
 export default function SearchPage() {
   return <Suspense fallback={<div className="loading-box">Loading...</div>}><SearchContent /></Suspense>;
 }

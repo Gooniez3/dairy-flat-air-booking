@@ -4,6 +4,7 @@ import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import Link from 'next/link';
 
+// Airport information used when displaying invoice flight details.
 const AIRPORTS: Record<string, { city: string; tz: string; tzLabel: string }> = {
   NZNE: { city: 'Dairy Flat, Auckland', tz: 'Pacific/Auckland', tzLabel: 'NZT' },
   YSSY: { city: 'Sydney, Australia', tz: 'Australia/Sydney', tzLabel: 'AEST' },
@@ -13,12 +14,14 @@ const AIRPORTS: Record<string, { city: string; tz: string; tzLabel: string }> = 
   NZTL: { city: 'Lake Tekapo, NZ', tz: 'Pacific/Auckland', tzLabel: 'NZT' },
 };
 
+// Aircraft codes mapped to their display names.
 const AIRCRAFT: Record<string, string> = {
   SJ30i: 'SyberJet SJ30i',
   SF50_A: 'Cirrus SF50', SF50_B: 'Cirrus SF50',
   HJ_A: 'HondaJet Elite', HJ_B: 'HondaJet Elite',
 };
 
+// Format departure and arrival times using the airport timezone.
 function fmtTime(d: string, ap: string) {
   return new Date(d).toLocaleTimeString('en-NZ', {
     hour: '2-digit', minute: '2-digit', hour12: false,
@@ -26,6 +29,7 @@ function fmtTime(d: string, ap: string) {
   });
 }
 
+// Format the flight date shown on the invoice.
 function fmtDate(d: string, ap: string) {
   return new Date(d).toLocaleDateString('en-NZ', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
@@ -39,6 +43,7 @@ interface SegProps {
   dep: string; arr: string; aircraft: string;
 }
 
+// Reusable component used to display a flight segment.
 function Segment({ label, flight, orig, dest, dep, arr, aircraft }: SegProps) {
   return (
     <div style={{ marginBottom: '0.9rem' }}>
@@ -80,6 +85,7 @@ function Segment({ label, flight, orig, dest, dep, arr, aircraft }: SegProps) {
   );
 }
 
+// Read booking details from the URL and generate the invoice view.
 function InvoiceContent() {
   const p = useSearchParams();
 
@@ -90,7 +96,7 @@ function InvoiceContent() {
   const outDep = p.get('dep') || '';
   const outArr = p.get('arr') || '';
   const outAircraft = p.get('aircraft') || '';
-  // KEY FIX: read outPrice (not price)
+  // Read outbound fare information from the booking parameters.
   const outPrice = Number(p.get('outPrice') || p.get('price') || 0);
 
   const retFlight = p.get('retFlight') || '';
@@ -104,11 +110,11 @@ function InvoiceContent() {
 
   const name = p.get('name') || '';
   const email = p.get('email') || '';
-
+  // Calculate subtotal, GST, and final payment amount.
   const base = outPrice + retPrice;
   const gst = Math.round(base * 0.15);
   const total = base + gst;
-
+  // Show a message when booking details are unavailable.
   if (!ref) {
     return (
       <div style={{ maxWidth: '600px', margin: '4rem auto', padding: '0 1.5rem', textAlign: 'center' }}>
@@ -121,7 +127,7 @@ function InvoiceContent() {
   return (
     <div style={{ maxWidth: '620px', margin: '0 auto', padding: '1rem 1rem 2rem' }}>
 
-      {/* ── Confirmation banner — navy blue airline theme ── */}
+      {/* Booking confirmation banner */}
       <div style={{
         background: 'linear-gradient(135deg, #0a1f3c 0%, #0f4c81 55%, #1565c0 100%)',
         color: 'white', borderRadius: '1rem', padding: '1.5rem 1.25rem',
@@ -167,10 +173,10 @@ function InvoiceContent() {
         </div>
       </div>
 
-      {/* ── Invoice card ── */}
+      {/* Main invoice information card */}
       <div style={{ background: 'white', borderRadius: '1rem', padding: '1.25rem', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', border: '1px solid #e2e8f0', marginBottom: '0.9rem' }}>
 
-        {/* Header */}
+        {/* Invoice header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.1rem', paddingBottom: '0.9rem', borderBottom: '2px solid #f0f4f8' }}>
           <div>
             <div style={{ fontWeight: 900, fontSize: '1.25rem', color: '#0f4c81' }}>✈ Dairy Flat Air</div>
@@ -184,7 +190,7 @@ function InvoiceContent() {
           </div>
         </div>
 
-        {/* Passenger */}
+        {/* Passenger information */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.1rem', background: '#f8fafc', borderRadius: '0.75rem', padding: '0.75rem 1rem' }}>
           <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'linear-gradient(135deg, #0f4c81, #1565c0)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '1rem', flexShrink: 0 }}>👤</div>
           <div>
@@ -194,7 +200,7 @@ function InvoiceContent() {
           </div>
         </div>
 
-        {/* Flight segment(s) */}
+        {/* Display outbound and return flight details */}
         <Segment
           label={isReturn ? 'Outbound Flight' : 'Flight Details'}
           flight={outFlight} orig={outOrig} dest={outDest}
@@ -208,7 +214,7 @@ function InvoiceContent() {
           />
         )}
 
-        {/* Pricing */}
+        {/* Fare and tax breakdown */}
         <div style={{ borderTop: '2px solid #f0f4f8', paddingTop: '0.9rem', marginTop: '0.25rem' }}>
           <div style={{ fontSize: '0.6875rem', fontWeight: 800, textTransform: 'uppercase' as const, letterSpacing: '0.1em', color: '#94a3b8', marginBottom: '0.55rem' }}>Price Breakdown</div>
 
@@ -234,7 +240,7 @@ function InvoiceContent() {
             <span>GST (15%)</span><span>NZD ${gst.toLocaleString()}</span>
           </div>
 
-          {/* Total bar */}
+          {/* Final amount charged */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'linear-gradient(135deg, #0f4c81, #1565c0)', borderRadius: '0.75rem', padding: '0.75rem 1rem', color: 'white' }}>
             <span style={{ fontSize: '1.0625rem', fontWeight: 800 }}>Total Charged</span>
             <span style={{ fontSize: '1.2rem', fontWeight: 900, letterSpacing: '-0.02em' }}>NZD ${total.toLocaleString()}</span>
@@ -242,7 +248,7 @@ function InvoiceContent() {
         </div>
       </div>
 
-      {/* ── Actions ── */}
+      {/* Invoice action buttons */}
       <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' as const, marginBottom: '0.9rem' }}>
         <button onClick={() => window.print()} style={{ background: 'linear-gradient(135deg, #0f4c81, #1565c0)', color: 'white', border: 'none', borderRadius: '0.625rem', padding: '0.65rem 1.1rem', fontWeight: 700, fontSize: '0.9375rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', boxShadow: '0 4px 12px rgba(15,76,129,0.3)' }}>
           🖨 Print / Save PDF
@@ -255,7 +261,7 @@ function InvoiceContent() {
         </Link>
       </div>
 
-      {/* Reference reminder */}
+      {/* Reminder to save the booking reference */}
       <div style={{ background: '#f0f7ff', border: '1.5px solid #bfdbfe', borderRadius: '0.75rem', padding: '0.85rem 1rem', display: 'flex', gap: '0.75rem', alignItems: 'flex-start', marginBottom: '0.9rem' }}>
         <div style={{ fontSize: '1.1rem', flexShrink: 0 }}>💡</div>
         <div>
@@ -271,6 +277,7 @@ function InvoiceContent() {
   );
 }
 
+// Render the invoice page with a loading fallback.
 export default function InvoicePage() {
   return (
     <Suspense fallback={<div style={{ padding: '2rem', textAlign: 'center' }}>Loading…</div>}>

@@ -1,5 +1,6 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
+// Booking details stored for passengers on each scheduled flight.
 export interface IBooking {
   passengerId: string;
   passengerName: string;
@@ -8,6 +9,7 @@ export interface IBooking {
   bookedAt: Date;
 }
 
+// Flight schedule information stored in MongoDB.
 export interface ISchedule extends Document {
   flightNumber: string;
   origin: string;
@@ -22,6 +24,7 @@ export interface ISchedule extends Document {
   status: string;
 }
 
+// Schema for individual booking records within a flight.
 const BookingSchema = new Schema<IBooking>({
   passengerId: { type: String, required: true },
   passengerName: { type: String, required: true },
@@ -30,6 +33,7 @@ const BookingSchema = new Schema<IBooking>({
   bookedAt: { type: Date, default: Date.now },
 });
 
+// Schema for scheduled flights and seat bookings.
 const ScheduleSchema = new Schema<ISchedule>({
   flightNumber: { type: String, required: true, index: true },
   origin: { type: String, required: true, index: true },
@@ -44,7 +48,8 @@ const ScheduleSchema = new Schema<ISchedule>({
   status: { type: String, default: 'scheduled' },
 });
 
-// Compound index for efficient searching
+// Compound index used for faster flight search queries.
 ScheduleSchema.index({ origin: 1, destination: 1, departureTime: 1 });
 
+// Reuse the existing model if it has already been created.
 export default mongoose.models.Schedule || mongoose.model<ISchedule>('Schedule', ScheduleSchema);
