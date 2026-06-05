@@ -54,15 +54,19 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Generate unique booking reference
-    let bookingReference = generateBookingRef();
-    // Ensure uniqueness (simple retry)
-    let attempts = 0;
-    while (attempts < 10) {
-      const exists = await Schedule.findOne({ 'bookings.bookingReference': bookingReference });
-      if (!exists) break;
-      bookingReference = generateBookingRef();
-      attempts++;
+    // Use the shared reference passed from the frontend for return trips,
+    // otherwise generate a new unique reference.
+    let bookingReference = body.bookingReference || generateBookingRef();
+
+    if (!body.bookingReference) {
+      // Only do uniqueness check when we generated the reference ourselves.
+      let attempts = 0;
+      while (attempts < 10) {
+        const exists = await Schedule.findOne({ 'bookings.bookingReference': bookingReference });
+        if (!exists) break;
+        bookingReference = generateBookingRef();
+        attempts++;
+      }
     }
 
     const fullName = `${title || ''} ${firstName} ${lastName}`.trim();

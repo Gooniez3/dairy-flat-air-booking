@@ -88,6 +88,16 @@ function isToday(date: string) {
   return date === todayNZStr();
 }
 
+// Generate a booking reference in the same format as the backend (DF + 6 chars).
+function generateSharedReference(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let ref = 'DF';
+  for (let i = 0; i < 6; i++) {
+    ref += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return ref;
+}
+
 // Display seat availability for each flight.
 function SeatBadge({ available, capacity }: { available: number; capacity: number }) {
   if (available === 0) return <span className="seat-badge seat-full">FULL</span>;
@@ -193,6 +203,7 @@ function BookingModal({ outbound, returnFlight, onClose, onConfirm }: {
   const [error, setError] = useState('');
   const totalPrice = outbound.price + (returnFlight?.price || 0);
   const gst = Math.round(totalPrice * 0.15);
+
   // Validate passenger details and continue with booking.
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -273,7 +284,7 @@ function SearchContent() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  
+
   // Search scheduled flights based on route, date and trip type.
   async function doSearch(o: string, d: string, d1: string, d2: string, type: 'oneway' | 'return' = tripType) {
     if (!o || !d || !d1) return;
@@ -298,28 +309,64 @@ function SearchContent() {
     } catch (e) { setError(String(e)); }
     finally { setLoading(false); }
   }
+
   // Handle search form submission.
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
     doSearch(orig, dest, date1, date2, tripType);
   }
+
   // Create booking records and redirect to the invoice page.
+  // Both legs of a return trip share the same booking reference.
   async function handleConfirmBooking(form: { title: string; firstName: string; lastName: string; email: string }) {
     if (!selectedOutbound) return;
     const passengerName = `${form.title} ${form.firstName} ${form.lastName}`;
-    const payload = { scheduleId: selectedOutbound._id, firstName: form.firstName, lastName: form.lastName, title: form.title, email: form.email, passengerName };
-    const res = await fetch('/api/bookings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+
+    // Generate one shared reference for both outbound and return legs.
+    const sharedReference = generateSharedReference();
+
+    const payload = {
+      scheduleId: selectedOutbound._id,
+      firstName: form.firstName,
+      lastName: form.lastName,
+      title: form.title,
+      email: form.email,
+      passengerName,
+      bookingReference: sharedReference,
+    };
+
+    const res = await fetch('/api/bookings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Booking failed');
 
     let retData = null;
     if (selectedReturn) {
-      const res2 = await fetch('/api/bookings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...payload, scheduleId: selectedReturn._id }) });
+      const res2 = await fetch('/api/bookings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...payload, scheduleId: selectedReturn._id }),
+      });
       retData = await res2.json();
       if (!res2.ok) throw new Error(retData.error || 'Return booking failed');
     }
 
-    const qs = new URLSearchParams({ ref: data.bookingReference, flight: data.flightNumber, orig: selectedOutbound.origin, dest: selectedOutbound.destination, dep: selectedOutbound.departureTime, arr: selectedOutbound.arrivalTime, outPrice: String(selectedOutbound.price), aircraft: selectedOutbound.aircraft, name: passengerName, email: form.email });
+    const qs = new URLSearchParams({
+      ref: data.bookingReference,
+      flight: data.flightNumber,
+      orig: selectedOutbound.origin,
+      dest: selectedOutbound.destination,
+      dep: selectedOutbound.departureTime,
+      arr: selectedOutbound.arrivalTime,
+      outPrice: String(selectedOutbound.price),
+      aircraft: selectedOutbound.aircraft,
+      name: passengerName,
+      email: form.email,
+    });
+
     if (retData && selectedReturn) {
       qs.set('retFlight', retData.flightNumber);
       qs.set('retOrig', selectedReturn.origin);
@@ -329,10 +376,13 @@ function SearchContent() {
       qs.set('retAircraft', selectedReturn.aircraft);
       qs.set('retPrice', String(selectedReturn.price));
     }
+
     router.push(`/invoice?${qs.toString()}`);
   }
+
   // Ensure all required flight selections are completed before booking.
   const canBook = selectedOutbound && (tripType === 'oneway' || selectedReturn);
+
   // Render the flight search interface and search results.
   return (
     <div className="page-shell">
@@ -415,6 +465,7 @@ function SearchContent() {
     </div>
   );
 }
+
 // Render the search page with a loading fallback.
 export default function SearchPage() {
   return <Suspense fallback={<div className="loading-box">Loading...</div>}><SearchContent /></Suspense>;
